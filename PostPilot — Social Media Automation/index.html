@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PostPilot — Social Media Automation</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Azeret+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#09090b;--bg2:#111113;--bg3:#18181b;
+  --border:#27272a;--border2:#3f3f46;
+  --text:#fafafa;--text2:#a1a1aa;--text3:#52525b;
+  --tw:#1d9bf0;--li:#0a66c2;--ig:#e4405f;--fb:#1877f2;--yt:#ff0000;
+  --green:#22c55e;--yellow:#f59e0b;--red:#ef4444;--purple:#a855f7;
+  --font:'Bricolage Grotesque',sans-serif;--mono:'Azeret Mono',monospace;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh}
+/* Layout */
+.app{display:grid;grid-template-columns:220px 1fr 340px;min-height:100vh}
+/* Sidebar */
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:20px 12px;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh}
+.logo{padding:8px 12px 20px;font-size:18px;font-weight:800;letter-spacing:-0.5px}
+.logo span{color:var(--purple)}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;transition:all 0.15s;border:1px solid transparent}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:var(--bg3);color:var(--text);border-color:var(--border)}
+.nav-section{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);padding:12px 12px 4px;font-family:var(--mono)}
+.accounts-list{margin-top:auto;padding-top:12px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:4px}
+.account-chip{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s}
+.account-chip:hover{background:var(--bg3)}
+.platform-dot{width:8px;height:8px;border-radius:50%}
+.platform-dot.tw{background:var(--tw)}
+.platform-dot.li{background:var(--li)}
+.platform-dot.ig{background:var(--ig)}
+.platform-dot.fb{background:var(--fb)}
+/* Main */
+.main{overflow-y:auto;background:var(--bg);display:flex;flex-direction:column}
+.topbar{padding:20px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg);position:sticky;top:0;z-index:20}
+.page-title{font-size:22px;font-weight:800;letter-spacing:-0.5px}
+.topbar-actions{display:flex;gap:8px}
+.btn{font-family:var(--font);font-size:13px;font-weight:600;padding:8px 16px;border-radius:8px;cursor:pointer;transition:all 0.15s;border:1px solid var(--border)}
+.btn:hover{border-color:var(--border2)}
+.btn-primary{background:var(--purple);color:#fff;border-color:var(--purple)}
+.btn-primary:hover{background:#9333ea;border-color:#9333ea}
+.btn-ghost{background:transparent;color:var(--text2)}
+.btn-ghost:hover{color:var(--text);background:var(--bg3)}
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:24px 28px}
+.stat{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px}
+.stat-label{font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:10px}
+.stat-val{font-size:28px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}
+.stat-delta{font-size:11px;font-family:var(--mono)}
+.stat-delta.up{color:var(--green)}
+.stat-delta.down{color:var(--red)}
+/* Calendar Grid */
+.calendar-section{padding:0 28px 28px;flex:1}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.cal-title{font-size:14px;font-weight:700}
+.cal-nav{display:flex;gap:6px}
+.cal-btn{background:var(--bg2);border:1px solid var(--border);color:var(--text2);font-size:13px;width:30px;height:30px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.cal-btn:hover{border-color:var(--border2);color:var(--text)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-day-header{font-size:11px;font-family:var(--mono);font-weight:500;color:var(--text3);text-align:center;padding-bottom:4px;text-transform:uppercase;letter-spacing:0.5px}
+.cal-day{min-height:90px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px;transition:all 0.15s;cursor:pointer}
+.cal-day:hover{border-color:var(--border2)}
+.cal-day.today{border-color:var(--purple);background:#a855f710}
+.cal-day-num{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px}
+.cal-day.today .cal-day-num{color:var(--purple);font-weight:800}
+.cal-post-chip{font-size:10px;padding:2px 6px;border-radius:4px;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.cal-post-chip.tw{background:#1d9bf015;color:var(--tw)}
+.cal-post-chip.li{background:#0a66c215;color:var(--li)}
+.cal-post-chip.ig{background:#e4405f15;color:var(--ig)}
+.cal-post-chip.all{background:#a855f715;color:var(--purple)}
+/* Right Composer Panel */
+.composer{background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;height:100vh;position:sticky;top:0;overflow-y:auto}
+.composer-header{padding:20px;border-bottom:1px solid var(--border)}
+.composer-title{font-size:15px;font-weight:700;margin-bottom:2px}
+.composer-sub{font-size:11px;color:var(--text2);font-family:var(--mono)}
+.composer-body{padding:18px;flex:1;display:flex;flex-direction:column;gap:14px}
+/* Platform selector */
+.platform-sel{display:flex;gap:6px;flex-wrap:wrap}
+.plat-btn{width:36px;height:36px;border-radius:8px;border:2px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all 0.15s;background:var(--bg3)}
+.plat-btn:hover{border-color:var(--border2)}
+.plat-btn.tw.on{border-color:var(--tw);background:#1d9bf020}
+.plat-btn.li.on{border-color:var(--li);background:#0a66c220}
+.plat-btn.ig.on{border-color:var(--ig);background:#e4405f20}
+.plat-btn.fb.on{border-color:var(--fb);background:#1877f220}
+.plat-btn.yt.on{border-color:var(--yt);background:#ff000020}
+/* Textarea */
+.post-textarea{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:13px;padding:12px;border-radius:8px;outline:none;resize:vertical;min-height:120px;line-height:1.7;transition:border-color 0.15s}
+.post-textarea:focus{border-color:var(--purple)}
+.post-textarea::placeholder{color:var(--text3)}
+.char-counter{font-size:11px;font-family:var(--mono);color:var(--text3);text-align:right}
+.char-counter.warn{color:var(--yellow)}
+.char-counter.over{color:var(--red)}
+/* AI buttons */
+.ai-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ai-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-family:var(--font);font-size:11px;font-weight:600;padding:7px;border-radius:7px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:5px}
+.ai-btn:hover{border-color:var(--border2);color:var(--text)}
+/* Schedule controls */
+.schedule-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.s-input{background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:12px;padding:8px 10px;border-radius:7px;outline:none;width:100%}
+.s-input:focus{border-color:var(--purple)}
+/* Hashtag input */
+.hashtag-row{display:flex;gap:6px;flex-wrap:wrap;padding:8px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;min-height:36px;cursor:text}
+.hashtag{background:#a855f720;color:var(--purple);font-size:11px;font-family:var(--mono);padding:2px 8px;border-radius:4px}
+.hashtag-input{background:none;border:none;color:var(--text);font-size:12px;outline:none;font-family:var(--font);min-width:80px;flex:1}
+/* Action buttons */
+.composer-footer{padding:16px 18px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px}
+.post-preview{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:12px;color:var(--text2);line-height:1.6;display:none}
+.post-preview.show{display:block}
+/* Queue */
+.queue-section{padding:0 28px 0}
+.queue-title{font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text2)}
+.queue-list{display:flex;flex-direction:column;gap:6px}
+.queue-item{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;transition:border-color 0.15s}
+.queue-item:hover{border-color:var(--border2)}
+.queue-platforms{display:flex;gap:4px}
+.q-dot{width:8px;height:8px;border-radius:50%}
+.queue-content{font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.queue-time{font-size:11px;font-family:var(--mono);color:var(--text3);white-space:nowrap}
+.queue-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;opacity:0;transition:all 0.15s;line-height:1}
+.queue-item:hover .queue-del{opacity:1}
+.queue-del:hover{color:var(--red)}
+/* Toast */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--purple);color:var(--purple);padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:999;animation:toastIn 0.3s ease;white-space:nowrap}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">Post<span>Pilot</span></div>
+    <div class="nav-section">Menu</div>
+    <div class="nav-item active">📅 Calendar</div>
+    <div class="nav-item">📊 Analytics</div>
+    <div class="nav-item">🗂 Content Library</div>
+    <div class="nav-item">♻️ Evergreen Queue</div>
+    <div class="nav-item">🔖 Hashtag Groups</div>
+    <div class="nav-item">💬 Inbox</div>
+    <div class="nav-section" style="margin-top:8px">Automation</div>
+    <div class="nav-item">🤖 AI Writer</div>
+    <div class="nav-item">🔁 RSS Auto-post</div>
+    <div class="nav-item">🔗 Zapier / n8n</div>
+    <div class="accounts-list">
+      <div class="nav-section" style="padding-top:0">Connected</div>
+      <div class="account-chip"><div class="platform-dot tw"></div>@yourbrand</div>
+      <div class="account-chip"><div class="platform-dot li"></div>Your Brand Inc.</div>
+      <div class="account-chip"><div class="platform-dot ig"></div>@yourbrand</div>
+      <div class="account-chip"><div class="platform-dot fb"></div>Your Brand Page</div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="main">
+    <div class="topbar">
+      <div class="page-title">Content Calendar</div>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost">⟳ Sync</button>
+        <button class="btn btn-ghost">📤 Export</button>
+        <button class="btn btn-primary" id="newPostBtn">+ New Post</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">Posts This Month</div>
+        <div class="stat-val" id="statPosts">0</div>
+        <div class="stat-delta up" id="statPostsDelta">↑ 0 from last month</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Total Impressions</div>
+        <div class="stat-val" id="statImpressions">0</div>
+        <div class="stat-delta up">↑ 18% vs last month</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Avg Engagement</div>
+        <div class="stat-val">4.8%</div>
+        <div class="stat-delta up">↑ 0.6%</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Queue (Scheduled)</div>
+        <div class="stat-val" id="statQueue">0</div>
+        <div class="stat-delta" style="color:var(--text3)">across all platforms</div>
+      </div>
+    </div>
+
+    <!-- Calendar -->
+    <div class="calendar-section">
+      <div class="cal-header">
+        <div class="cal-title" id="calTitle">February 2026</div>
+        <div class="cal-nav">
+          <button class="cal-btn" id="prevMonth">‹</button>
+          <button class="cal-btn" id="nextMonth">›</button>
+        </div>
+      </div>
+      <div class="cal-grid">
+        <div class="cal-day-header">Sun</div>
+        <div class="cal-day-header">Mon</div>
+        <div class="cal-day-header">Tue</div>
+        <div class="cal-day-header">Wed</div>
+        <div class="cal-day-header">Thu</div>
+        <div class="cal-day-header">Fri</div>
+        <div class="cal-day-header">Sat</div>
+        <div id="calDays"></div>
+      </div>
+    </div>
+
+    <!-- Queue -->
+    <div class="queue-section" style="padding:0 28px 28px;margin-top:24px">
+      <div class="queue-title">Upcoming Queue</div>
+      <div class="queue-list" id="queueList"></div>
+    </div>
+  </div>
+
+  <!-- Composer Panel -->
+  <div class="composer">
+    <div class="composer-header">
+      <div class="composer-title">✍️ Compose Post</div>
+      <div class="composer-sub">Schedule across platforms</div>
+    </div>
+    <div class="composer-body">
+      <!-- Platforms -->
+      <div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Platforms</div>
+        <div class="platform-sel">
+          <button class="plat-btn tw on" data-p="tw" title="Twitter/X">𝕏</button>
+          <button class="plat-btn li on" data-p="li" title="LinkedIn">in</button>
+          <button class="plat-btn ig" data-p="ig" title="Instagram">📷</button>
+          <button class="plat-btn fb" data-p="fb" title="Facebook">f</button>
+          <button class="plat-btn yt" data-p="yt" title="YouTube">▶</button>
+        </div>
+      </div>
+      <!-- Content -->
+      <div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Content</div>
+        <textarea class="post-textarea" id="postContent" placeholder="What do you want to share?
+
+Use ✦ AI Write to generate content, or type your own..." maxlength="500"></textarea>
+        <div class="char-counter" id="charCount">0 / 280</div>
+      </div>
+      <!-- AI Actions -->
+      <div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">AI Actions</div>
+        <div class="ai-actions">
+          <button class="ai-btn" id="aiWrite">✦ AI Write</button>
+          <button class="ai-btn" id="aiImprove">↑ Improve</button>
+          <button class="ai-btn" id="aiShorten">↔ Shorten</button>
+          <button class="ai-btn" id="aiHashtags">🔖 Hashtags</button>
+        </div>
+      </div>
+      <!-- Hashtags -->
+      <div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Hashtags</div>
+        <div class="hashtag-row" id="hashtagRow" onclick="document.getElementById('hashInput').focus()">
+          <span class="hashtag">#automation</span>
+          <span class="hashtag">#ai</span>
+          <input class="hashtag-input" id="hashInput" placeholder="Add tag..." maxlength="30">
+        </div>
+      </div>
+      <!-- Schedule -->
+      <div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Schedule</div>
+        <div class="schedule-row">
+          <input class="s-input" type="date" id="postDate" value="2026-02-17">
+          <input class="s-input" type="time" id="postTime" value="09:00">
+        </div>
+      </div>
+      <!-- Best Times -->
+      <div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Best Times Today</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="ai-btn" onclick="document.getElementById('postTime').value='09:00';showToast('✓ Time set to 9:00 AM')">9:00 AM</button>
+          <button class="ai-btn" onclick="document.getElementById('postTime').value='12:30';showToast('✓ Time set to 12:30 PM')">12:30 PM</button>
+          <button class="ai-btn" onclick="document.getElementById('postTime').value='17:00';showToast('✓ Time set to 5:00 PM')">5:00 PM</button>
+          <button class="ai-btn" onclick="document.getElementById('postTime').value='19:30';showToast('✓ Time set to 7:30 PM')">7:30 PM</button>
+        </div>
+      </div>
+      <!-- Preview -->
+      <div class="post-preview" id="postPreview"></div>
+    </div>
+    <!-- Footer -->
+    <div class="composer-footer">
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" id="previewBtn" style="flex:1">👁 Preview</button>
+        <button class="btn btn-ghost" id="saveDraftBtn" style="flex:1">📝 Draft</button>
+      </div>
+      <button class="btn btn-primary" id="scheduleBtn" style="width:100%">📅 Schedule Post</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+const aiSamples=[
+  "🚀 Automation isn't the future — it's the present. Companies that embrace AI-powered workflows are seeing 3x productivity gains. Are you still doing things manually?\n\nHere's what we automated this week...",
+  "💡 The best marketing tool you're not using? Consistency.\n\nMost brands give up after 30 days. The ones that win show up for 300 days.\n\nWe've automated our content pipeline so we never miss a day. Here's how 👇",
+  "📊 Our latest report: 68% of professionals say they waste 2+ hours/day on repetitive tasks.\n\nThat's 10 hours a week. 520 hours a year.\n\nWhat would you do with that time back?",
+  "🤖 Stop sleeping on AI tools.\n\nIn the last 90 days we used AI to:\n✅ Write 80+ posts (this one included)\n✅ Reply to 500+ DMs\n✅ Generate 12 landing pages\n\nThe output? 4x growth. Same team size.",
+];
+let scheduledPosts=[
+  {id:1,platforms:['tw','li'],content:'🚀 Excited to share our Q1 automation results...',date:'2026-02-17',time:'09:00'},
+  {id:2,platforms:['ig'],content:'Behind the scenes: building our AI workflow...',date:'2026-02-18',time:'12:00'},
+  {id:3,platforms:['tw','li','ig'],content:'New blog post: 10 automation tools for 2026...',date:'2026-02-19',time:'17:00'},
+  {id:4,platforms:['li'],content:'Excited to announce our partnership with...',date:'2026-02-20',time:'10:00'},
+  {id:5,platforms:['tw'],content:'Hot take: most social media advice is outdated...',date:'2026-02-21',time:'09:00'},
+];
+const platformEmoji={tw:'𝕏',li:'in',ig:'📷',fb:'f',yt:'▶'};
+const platformColor={tw:'var(--tw)',li:'var(--li)',ig:'var(--ig)',fb:'var(--fb)',yt:'var(--yt)'};
+let currentMonth=1, currentYear=2026;
+let aiIdx=0;
+
+function showToast(msg){
+  const t=document.querySelector('.toast');if(t)t.remove();
+  const el=document.createElement('div');el.className='toast';el.textContent=msg;
+  document.body.appendChild(el);setTimeout(()=>el.remove(),3000);
+}
+function renderCalendar(){
+  const monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('calTitle').textContent=monthNames[currentMonth]+' '+currentYear;
+  const firstDay=new Date(currentYear,currentMonth,1).getDay();
+  const daysInMonth=new Date(currentYear,currentMonth+1,0).getDate();
+  const today=new Date();
+  const container=document.getElementById('calDays');
+  const grid=container.parentElement;
+  grid.querySelectorAll('.cal-day').forEach(d=>d.remove());
+  for(let i=0;i<firstDay;i++){
+    const empty=document.createElement('div');
+    empty.style.minHeight='90px';
+    grid.appendChild(empty);
+  }
+  for(let d=1;d<=daysInMonth;d++){
+    const dayEl=document.createElement('div');
+    dayEl.className='cal-day';
+    const isToday=d===today.getDate()&&currentMonth===today.getMonth()&&currentYear===today.getFullYear();
+    if(isToday)dayEl.classList.add('today');
+    dayEl.innerHTML=`<div class="cal-day-num">${d}</div>`;
+    const dayStr=currentYear+'-'+(String(currentMonth+1).padStart(2,'0'))+'-'+(String(d).padStart(2,'0'));
+    const dayPosts=scheduledPosts.filter(p=>p.date===dayStr);
+    dayPosts.slice(0,3).forEach(p=>{
+      const chip=document.createElement('div');
+      const cls=p.platforms.length>1?'all':p.platforms[0];
+      chip.className=`cal-post-chip ${cls}`;
+      chip.textContent=p.time+' '+p.content.slice(0,20)+'…';
+      dayEl.appendChild(chip);
+    });
+    dayEl.addEventListener('click',()=>{
+      document.getElementById('postDate').value=dayStr;
+      showToast(`Selected ${monthNames[currentMonth]} ${d}`);
+    });
+    grid.appendChild(dayEl);
+  }
+}
+function renderQueue(){
+  const sorted=[...scheduledPosts].sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time));
+  document.getElementById('queueList').innerHTML=sorted.slice(0,8).map(p=>`
+    <div class="queue-item" data-id="${p.id}">
+      <div class="queue-platforms">${p.platforms.map(pl=>`<div class="q-dot" style="background:${platformColor[pl]}"></div>`).join('')}</div>
+      <div class="queue-content">${p.content}</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="queue-time">${p.date.slice(5)} ${p.time}</div>
+        <button class="queue-del" data-id="${p.id}">✕</button>
+      </div>
+    </div>`).join('');
+  document.querySelectorAll('.queue-del').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      const id=parseInt(btn.dataset.id);
+      scheduledPosts=scheduledPosts.filter(p=>p.id!==id);
+      renderQueue();renderCalendar();updateStats();
+      showToast('Post removed from queue');
+    });
+  });
+}
+function updateStats(){
+  const count=scheduledPosts.length;
+  animateNum('statPosts',count);
+  animateNum('statImpressions',Math.floor(count*2840));
+  animateNum('statQueue',count);
+  document.getElementById('statPostsDelta').textContent='↑ '+(count-18)+' from last month';
+}
+function animateNum(id,target){
+  const el=document.getElementById(id);if(!el)return;
+  const start=performance.now(),dur=1000,from=0;
+  function update(now){
+    const p=Math.min((now-start)/dur,1);
+    const ease=1-Math.pow(1-p,3);
+    el.textContent=Math.floor(ease*target).toLocaleString();
+    if(p<1)requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+// Platform toggles
+document.querySelectorAll('.plat-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>btn.classList.toggle('on'));
+});
+// Char counter
+document.getElementById('postContent').addEventListener('input',function(){
+  const len=this.value.length;
+  const el=document.getElementById('charCount');
+  el.textContent=len+' / 280';
+  el.className='char-counter'+(len>280?' over':len>240?' warn':'');
+});
+// Hashtag input
+document.getElementById('hashInput').addEventListener('keydown',function(e){
+  if(e.key==='Enter'||e.key===' '){
+    e.preventDefault();
+    const val=this.value.trim().replace(/^#/,'');
+    if(!val)return;
+    const row=document.getElementById('hashtagRow');
+    const tag=document.createElement('span');
+    tag.className='hashtag';tag.textContent='#'+val;
+    row.insertBefore(tag,this);
+    this.value='';
+  }
+});
+// AI actions
+document.getElementById('aiWrite').addEventListener('click',()=>{
+  const ta=document.getElementById('postContent');
+  ta.value='';let i=0;
+  const text=aiSamples[aiIdx%aiSamples.length];aiIdx++;
+  function type(){
+    if(i<text.length){ta.value+=text[i++];ta.dispatchEvent(new Event('input'));setTimeout(type,18);}
+    else showToast('✦ AI content generated');
+  }
+  type();
+});
+document.getElementById('aiImprove').addEventListener('click',()=>{
+  const ta=document.getElementById('postContent');
+  if(!ta.value.trim()){showToast('⚠ Write something first');return;}
+  showToast('✦ Improving your content…');
+  setTimeout(()=>{
+    ta.value=ta.value+'  💡 Pro tip: teams using AI-powered scheduling see 3x better engagement rates.';
+    ta.dispatchEvent(new Event('input'));
+    showToast('✓ Content improved');
+  },1200);
+});
+document.getElementById('aiShorten').addEventListener('click',()=>{
+  const ta=document.getElementById('postContent');
+  if(!ta.value.trim()){showToast('⚠ Write something first');return;}
+  const shortened=ta.value.split('\n')[0].slice(0,200)+(ta.value.length>200?'…':'');
+  ta.value=shortened;ta.dispatchEvent(new Event('input'));
+  showToast('✓ Content shortened for Twitter');
+});
+document.getElementById('aiHashtags').addEventListener('click',()=>{
+  const tags=['#contentmarketing','#socialmediamarketing','#growthhacking','#startups','#productivityhacks'];
+  const row=document.getElementById('hashtagRow');
+  const input=document.getElementById('hashInput');
+  tags.forEach(t=>{
+    const tag=document.createElement('span');tag.className='hashtag';tag.textContent=t;
+    row.insertBefore(tag,input);
+  });
+  showToast('✓ Hashtags added');
+});
+// Preview
+document.getElementById('previewBtn').addEventListener('click',()=>{
+  const content=document.getElementById('postContent').value.trim();
+  if(!content){showToast('⚠ Write something first');return;}
+  const preview=document.getElementById('postPreview');
+  preview.textContent=content;
+  preview.classList.toggle('show');
+});
+// Draft
+document.getElementById('saveDraftBtn').addEventListener('click',()=>showToast('📝 Saved as draft'));
+// Schedule
+document.getElementById('scheduleBtn').addEventListener('click',()=>{
+  const content=document.getElementById('postContent').value.trim();
+  const date=document.getElementById('postDate').value;
+  const time=document.getElementById('postTime').value;
+  const platforms=[...document.querySelectorAll('.plat-btn.on')].map(b=>b.dataset.p);
+  if(!content){showToast('⚠ Add content first');return;}
+  if(!platforms.length){showToast('⚠ Select at least one platform');return;}
+  scheduledPosts.push({id:Date.now(),platforms,content,date,time});
+  renderQueue();renderCalendar();updateStats();
+  document.getElementById('postContent').value='';
+  document.getElementById('postPreview').classList.remove('show');
+  showToast('✓ Post scheduled for '+date+' at '+time);
+});
+// Calendar nav
+document.getElementById('prevMonth').addEventListener('click',()=>{
+  currentMonth--;if(currentMonth<0){currentMonth=11;currentYear--;}
+  renderCalendar();
+});
+document.getElementById('nextMonth').addEventListener('click',()=>{
+  currentMonth++;if(currentMonth>11){currentMonth=0;currentYear++;}
+  renderCalendar();
+});
+document.getElementById('newPostBtn').addEventListener('click',()=>{
+  document.getElementById('postContent').focus();
+  showToast('Ready to compose your post!');
+});
+// Init
+renderCalendar();
+renderQueue();
+updateStats();
+</script>
+</body>
+</html>
